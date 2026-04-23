@@ -1,0 +1,56 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'documentation/**'
+      - '*.md'
+  workflow_dispatch:
+
+jobs:
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate Markdown
+        run: |
+          echo "Checking markdown files..."
+          find documentation -name "*.md" -type f | while read file; do
+            echo "Checking $file"
+            if [ ! -s "$file" ]; then
+              echo "Warning: $file is empty"
+            fi
+          done
+
+      - name: Generate Documentation Index
+        run: |
+          echo "# Open Compliance Network - Documentation Index" > docs-index.md
+          echo "" >> docs-index.md
+          echo "Generated on: $(date)" >> docs-index.md
+          echo "" >> docs-index.md
+          echo "## Available Documentation" >> docs-index.md
+          find documentation -name "*.md" -type f | sort | while read file; do
+            echo "- [$file]($file)" >> docs-index.md
+          done
+
+      - name: Upload Documentation Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: |
+            documentation/
+            docs-index.md
+            README.md
+
+      - name: Documentation Summary
+        run: |
+          echo "## Documentation Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Documentation validated and archived" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Files Processed" >> $GITHUB_STEP_SUMMARY
+          find documentation -name "*.md" -type f | wc -l | xargs -I {} echo "- Markdown files: {}" >> $GITHUB_STEP_SUMMARY
