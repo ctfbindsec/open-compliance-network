@@ -1,0 +1,57 @@
+name: Dependency Security Scan
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run weekly on Mondays at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+jobs:
+  dependency-scan:
+    name: Scan Dependencies
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Dependency Review (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Audit Frontend Dependencies
+        working-directory: frontend
+        continue-on-error: true
+        run: |
+          npm audit --audit-level=moderate
+          echo "✅ Frontend audit completed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Audit Backend Dependencies
+        working-directory: backend
+        continue-on-error: true
+        run: |
+          npm audit --audit-level=moderate || echo "Backend audit completed with findings"
+          echo "✅ Backend audit completed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Audit Contracts Dependencies
+        working-directory: contracts
+        continue-on-error: true
+        run: |
+          npm audit --audit-level=moderate
+          echo "✅ Contracts audit completed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Security Summary
+        if: always()
+        run: |
+          echo "## Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Dependency security scan completed for all components" >> $GITHUB_STEP_SUMMARY

@@ -7,6 +7,11 @@
 [![CRE Home](https://img.shields.io/static/v1?label=CRE\&message=Home\&color=blue)](https://chain.link/chainlink-runtime-environment)
 [![CRE Documentation](https://img.shields.io/static/v1?label=CRE\&message=Docs\&color=blue)](https://docs.chain.link/cre)
 
+[![Main CI/CD](https://github.com/ctfbindsec/open-compliance-network/workflows/Main%20CI%2FCD/badge.svg)](https://github.com/ctfbindsec/open-compliance-network/actions/workflows/main-ci.yml)
+[![Contracts CI](https://github.com/ctfbindsec/open-compliance-network/workflows/Contracts%20CI/badge.svg)](https://github.com/ctfbindsec/open-compliance-network/actions/workflows/contracts-ci.yml)
+[![Frontend CI](https://github.com/ctfbindsec/open-compliance-network/workflows/Frontend%20CI/badge.svg)](https://github.com/ctfbindsec/open-compliance-network/actions/workflows/frontend-ci.yml)
+[![Backend CI](https://github.com/ctfbindsec/open-compliance-network/workflows/Backend%20CI/badge.svg)](https://github.com/ctfbindsec/open-compliance-network/actions/workflows/backend-ci.yml)
+
 </div>
 
 # Open Compliance Layer - Trustless Compliance Engine for Institutional DeFi
@@ -138,6 +143,31 @@ cd contracts && npm install
 # 5. Build + test contracts
 forge build && forge test
 ```
+
+## CI/CD Pipeline
+
+The project includes a comprehensive CI/CD pipeline powered by GitHub Actions. The pipeline automatically builds, tests, and validates all components on every push and pull request.
+
+**Key Features:**
+- ✅ Automated contract building and testing with Foundry
+- ✅ Frontend build validation with TypeScript and Vite
+- ✅ Backend validation with Bun runtime
+- ✅ Dependency security scanning
+- ✅ Path-filtered workflows (only runs relevant checks)
+- ✅ Docker build validation
+- ✅ Pull request validation with comprehensive summaries
+
+**Quick Start for Contributors:**
+```bash
+# Run local checks before pushing
+cd contracts && forge test && forge fmt --check
+cd ../frontend && npm run build
+cd ../backend && bun install
+```
+
+**Documentation:**
+- [Full CI/CD Documentation](.github/CI-CD-PIPELINE.md)
+- [Workflows Reference](.github/workflows/README.md)
 
 ## Project Structure
 

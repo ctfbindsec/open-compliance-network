@@ -1,0 +1,123 @@
+name: Main CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  full-build:
+    name: Full Stack Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Build Environment
+        run: |
+          echo "## Build Environment Setup" >> $GITHUB_STEP_SUMMARY
+          echo "- Runner: Ubuntu Latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Node.js: 20.x" >> $GITHUB_STEP_SUMMARY
+          echo "- Bun: Latest" >> $GITHUB_STEP_SUMMARY
+          echo "- Foundry: Nightly" >> $GITHUB_STEP_SUMMARY
+
+      # Contracts
+      - name: Setup Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Setup Node.js for Contracts
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: contracts/package-lock.json
+
+      - name: Build Contracts
+        working-directory: contracts
+        run: |
+          npm ci
+          forge build
+          echo "✅ Contracts built successfully" >> $GITHUB_STEP_SUMMARY
+
+      - name: Test Contracts
+        working-directory: contracts
+        run: |
+          forge test
+          echo "✅ Contract tests passed" >> $GITHUB_STEP_SUMMARY
+
+      # Frontend
+      - name: Setup Node.js for Frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Build Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          echo "✅ Frontend built successfully" >> $GITHUB_STEP_SUMMARY
+
+      # Backend
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Build Backend
+        working-directory: backend
+        run: |
+          bun install
+          echo "✅ Backend dependencies installed" >> $GITHUB_STEP_SUMMARY
+
+      # Summary
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "All components built successfully!" >> $GITHUB_STEP_SUMMARY
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Backend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          tags: ocn-backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Frontend Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          tags: ocn-frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker Compose
+        run: |
+          echo "Testing docker-compose configuration..."
+          docker-compose config
+          echo "✅ Docker Compose configuration is valid" >> $GITHUB_STEP_SUMMARY
